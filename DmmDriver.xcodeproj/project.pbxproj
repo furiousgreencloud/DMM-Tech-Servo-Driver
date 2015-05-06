@@ -1,0 +1,246 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		96018F511AE8BDAC008C3947 /* DmmDriver.c in Sources */ = {isa = PBXBuildFile; fileRef = 96018F501AE8BDAC008C3947 /* DmmDriver.c */; };
+		96018F531AE8BDBB008C3947 /* SerialPort.c in Sources */ = {isa = PBXBuildFile; fileRef = 96018F521AE8BDBB008C3947 /* SerialPort.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		96018F441AE8BD58008C3947 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		96018F461AE8BD58008C3947 /* DmmDriver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DmmDriver; sourceTree = BUILT_PRODUCTS_DIR; };
+		96018F501AE8BDAC008C3947 /* DmmDriver.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = DmmDriver.c; sourceTree = "<group>"; };
+		96018F521AE8BDBB008C3947 /* SerialPort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = SerialPort.c; sourceTree = "<group>"; };
+		963ED7371AE8BE020047E5ED /* SerialPort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SerialPort.h; path = SerialPortSample/SerialPort.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		96018F431AE8BD58008C3947 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		96018F3D1AE8BD58008C3947 = {
+			isa = PBXGroup;
+			children = (
+				96018F481AE8BD58008C3947 /* DmmDriver */,
+				96018F471AE8BD58008C3947 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		96018F471AE8BD58008C3947 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				96018F461AE8BD58008C3947 /* DmmDriver */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		96018F481AE8BD58008C3947 /* DmmDriver */ = {
+			isa = PBXGroup;
+			children = (
+				963ED7371AE8BE020047E5ED /* SerialPort.h */,
+				96018F521AE8BDBB008C3947 /* SerialPort.c */,
+				96018F501AE8BDAC008C3947 /* DmmDriver.c */,
+			);
+			path = DmmDriver;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		96018F451AE8BD58008C3947 /* DmmDriver */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96018F4D1AE8BD58008C3947 /* Build configuration list for PBXNativeTarget "DmmDriver" */;
+			buildPhases = (
+				96018F421AE8BD58008C3947 /* Sources */,
+				96018F431AE8BD58008C3947 /* Frameworks */,
+				96018F441AE8BD58008C3947 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DmmDriver;
+			productName = DmmDriver;
+			productReference = 96018F461AE8BD58008C3947 /* DmmDriver */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		96018F3E1AE8BD58008C3947 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0610;
+				ORGANIZATIONNAME = "Ciel Marks";
+				TargetAttributes = {
+					96018F451AE8BD58008C3947 = {
+						CreatedOnToolsVersion = 6.1;
+					};
+				};
+			};
+			buildConfigurationList = 96018F411AE8BD58008C3947 /* Build configuration list for PBXProject "DmmDriver" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 96018F3D1AE8BD58008C3947;
+			productRefGroup = 96018F471AE8BD58008C3947 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				96018F451AE8BD58008C3947 /* DmmDriver */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		96018F421AE8BD58008C3947 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96018F511AE8BDAC008C3947 /* DmmDriver.c in Sources */,
+				96018F531AE8BDBB008C3947 /* SerialPort.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		96018F4B1AE8BD58008C3947 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		96018F4C1AE8BD58008C3947 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		96018F4E1AE8BD58008C3947 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		96018F4F1AE8BD58008C3947 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		96018F411AE8BD58008C3947 /* Build configuration list for PBXProject "DmmDriver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96018F4B1AE8BD58008C3947 /* Debug */,
+				96018F4C1AE8BD58008C3947 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96018F4D1AE8BD58008C3947 /* Build configuration list for PBXNativeTarget "DmmDriver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96018F4E1AE8BD58008C3947 /* Debug */,
+				96018F4F1AE8BD58008C3947 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 96018F3E1AE8BD58008C3947 /* Project object */;
+}
