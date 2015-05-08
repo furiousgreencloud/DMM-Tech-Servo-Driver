@@ -203,42 +203,56 @@ ProtocolError_t Get_Function(void)
   return Complete_Success;
 }
 
-void printStatusByte(unsigned char statusByte) {
+bool printStatusByte(unsigned char statusByte) {
+    bool FatalError = false;
+    printf("Motor Status\n");
     if (statusByte & 1) { // bit 0
-        printf("Motor in Position\n");
+        printf("\tMotor In position\n");
     } else {
-        printf("Motor out of Position\n");
+        printf("\tMotor Out of Position\n");
     }
     
     if (statusByte & 2) { // bit 1
-        printf("Motor Active\n");
+        printf("\tMotor Free/Disengaged\n");
     } else {
-        printf("Motor Free\n");
+        printf("\tMotor Active/Enagaged\n");
     }
     
     if (statusByte & 28) { // bits 2,3,4
-        printf("Alarm: ");
+        printf("\tALARM: ");
         int alarmCode = (statusByte & 28) >> 2;
         switch (alarmCode) {
-            case 1: printf("Lost Phase, |Pset - Pmotor|>8192(steps), 180(deg)\n"); break;
-            case 2: printf("Over Current\n"); break;
-            case 3: printf("Over Head or Over Power\n");
-            case 4: printf("CRC Error Report, Command no Accepted\n");
+            case 1:
+                printf("Lost Phase, |Pset - Pmotor|>8192(steps), 180(deg)\n");
+                FatalError = true;
+                break;
+            case 2:
+                printf("Over Current\n");
+                FatalError = true;
+                break;
+            case 3:
+                printf("Over Heat or Over Power\n");
+                FatalError = true;
+                break;
+            case 4:
+                printf("CRC Error Report, Command not Accepted\n");
+                break;
             default:
                 printf("Unkown Error\n");
         }
     } else {
-        printf("No Alarm");
+        //printf("No Alarm");
     }
     
     if ((statusByte & 32) == 0) { // bit 5
-        printf("S-curve,lieanr,circular motion waiting for next motion\n");
+        printf("\tWaiting for next S-curve,lieanr,circular motion\n");
     } else {
-        printf("S-curve,lieanr,circular motion busy with current motion\n");
+        printf("\tBUSY with current S-curve,lieanr,circular motion\n");
     }
     
     Boolean pin2JP3 = (statusByte & 64);  // bit 6
-    printf("PIN 2 of JP3 (CNC Zero Position) is %s\n", (pin2JP3) ? "HIGH" : "LOW");
+    printf("\tCNC Zero Position (PIN 2 of JP3): %s\n", (pin2JP3) ? "HIGH" : "LOW");
+    return FatalError;
 }
 
 /*Get data with sign - long*/
@@ -377,7 +391,6 @@ void MoveMotorConstantRotation(char Axis_Num,long r) {
     Send_Package(Turn_ConstSpeed, Axis_Num, r);
 }
 
-
 void ResetOrgin(char Axis_Num) {
   Send_Package(Set_Origin, Axis_Num, 0); // 0: Dummy Data
 }
@@ -407,6 +420,15 @@ void SetIntGain(char Axis_Num, long gain) {
     Send_Package(Set_IntGain, Axis_Num, l);
 }
 
+void MotorDisengage(char Axis_Num, unsigned char curConfig) {
+    // Free Shaft
+    Send_Package(Set_Drive_Config, Axis_Num, curConfig | Config_Bit_MOTOR_DRIVE);
+}
+
+void MotorEngage( char Axis_Num, unsigned char curConfig) {
+    Send_Package(Set_Drive_Config, Axis_Num, curConfig & !Config_Bit_MOTOR_DRIVE);
+}
+
 void ReadMainGain(char Axis_Num) {
   Send_Package(Read_MainGain, Axis_Num, Is_MainGain);
   ProtocolError = In_Progress;
@@ -422,6 +444,7 @@ long ReadParamer(char queryParam, char Axis_Num) {
     Send_Package(queryParam, Axis_Num, 0 ); // 0 is a dummy Data Value
     while(ProtocolError == In_Progress) {
         ReadPackage();
+        delay(20);
     }
 //    printf("%s: %ld\n",ParameterName(Drive_Read_Code), Drive_Read_Value);
     if (ProtocolError == Complete_Success) {
@@ -445,24 +468,37 @@ void ReadMotorPosition32(char AxisID)
 }
 
 
-
 int testMotor(void)
 {
+    const char Axis_Num = 0;
+    unsigned char statusByte = -1;
     printf("DMM Test Motor\n\n");
     
-    const char Axis_Num = 0;
-     long delta = 5; //100;
-     long center = 0;
-    const int delay_ms = 1000;
+    long result = ReadParamer(Read_Drive_Status, Axis_Num);
+    bool FatalError = true;
+    if (result != LONG_MIN ) {
+        statusByte = (unsigned char)(result & 0x7f);
+        FatalError = printStatusByte(Drive_Read_Value);
+    }
+    
+    if (FatalError || result == LONG_MIN) {
+        return statusByte;
+        // STOP  MOTOR PISSED!
+    }
+
+    long delta = 5; //100;
+    long center = 0;
+    int delay_ms = 1000;
 
     long config = ReadParamer(Read_Drive_Config, Axis_Num);
     if (configByte >= 0 && config <= 0x7f) {
         configByte = (unsigned char)config;
     }
     
-
+    
+    
     // limited "Set" writes to firmware dont' use in loopDmmDriver_SerialPort_h
-    SetMainGain(Axis_Num, 60); //[15]// [14~20~40(loud)]relative to load, increase as load increases
+    //SetMainGain(Axis_Num, 60); //[15]// [14~20~40(loud)]relative to load, increase as load increases
     ReadParamer(Read_MainGain, Axis_Num);  ReadMainGain(Axis_Num); // Param is MotorID Main Gain stored in MainGain_Read variable
     // SetSpeedGain(Axis_Num, 127); // [127] higher : less dynamic movements
     ReadParamer(Read_SpeedGain, Axis_Num);
@@ -475,6 +511,9 @@ int testMotor(void)
     ReadParamer(Read_Pos_OnRange, Axis_Num);
     ReadParamer(Read_GearNumber, Axis_Num); // 500
     ReadParamer(Read_Drive_Config, Axis_Num);
+    
+#if false
+    
     // reset Origin to Down/Reset Position
     ResetOrgin(Axis_Num);
     //return 0;
@@ -482,19 +521,12 @@ int testMotor(void)
     // These are not remembered
     SetMaxSpeed(Axis_Num, 10); // 1
     SetMaxAccel(Axis_Num, 16); // 4
-    
-    
+
     
     //MoveMotorToAbsolutePosition32(Axis_Num,0);
     
-    ReadParamer(Read_Drive_Status, Axis_Num);
-    printStatusByte(Drive_Read_Value);
-    if (Drive_Read_Value != 0) {
-//        return (int)Drive_Read_Value;
-    }
-    printf("\n");
-
     
+    printf("\n");
     SetMaxSpeed(Axis_Num, 2); // 1
     SetMaxAccel(Axis_Num, 6); // 6
     
@@ -537,6 +569,11 @@ int testMotor(void)
 
         
     //}
+    
+#endif
+    
+    MotorDisengage(Axis_Num,configByte);
+    delay(50);
     return 0;
 }
 
