@@ -87,7 +87,7 @@ unsigned char configByte = 0;
 ProtocolError_t Get_Function(void);
 long Cal_SignValue(unsigned char One_Package[8]);
 unsigned int Cal_UnsignedValue(unsigned char One_Package[8]);
-void Make_CRC_Send(unsigned char Plength,unsigned char B[8]);
+Boolean Make_CRC_Send(unsigned char Plength,unsigned char B[8]);
 
 const char * ParameterName(char isCode) {
     switch(isCode) {
@@ -110,17 +110,16 @@ const char * ParameterName(char isCode) {
 
 void ReadPackage() {
   unsigned char c,cif;
-  if (SerialAvailable() == 0) { // no new data
-      return;
-      /*
-       delay(50);
-      printf("... \n");
+  if (SerialAvailable() == 0) { // No Data... wait
+      delay(20);
+      //printf("Waiting for response ... ");
       if (SerialAvailable() == 0) {
           ProtocolError = Timeout_Error;
-          printf("Timeout\n");
+          //printf("Timeout\n");
           return;
+      } else {
+          //printf("Phew OK\n");
       }
-      */
   }
   while(SerialAvailable() > 0 && ((InBfTopPointer+1) % sizeof(InputBuffer)) != InBfBtmPointer  ) {
       // while there is data and buffer not full
@@ -307,9 +306,8 @@ unsigned int Cal_UnsignedValue(unsigned char One_Package[8])
 // always B0, but in the code of below, the first byte is always B0.
 //
 
-void Send_Package(unsigned char func, char ID , long Displacement)
+Boolean Send_Package(unsigned char func, char ID , long Displacement)
 {
-    
   unsigned char B[8],Package_Length,Function_Code;
   long TempLong;
   B[1] = B[2] = B[3] = B[4] = B[5] = (unsigned char)0x80;
@@ -349,18 +347,21 @@ void Send_Package(unsigned char func, char ID , long Displacement)
     Package_Length = 4;
   }
   B[1] += (Package_Length-4)*32 + Function_Code;
-  Make_CRC_Send(Package_Length,B);
+  return Make_CRC_Send(Package_Length,B);
 }
 
 
-void Make_CRC_Send(unsigned char Plength,unsigned char B[8]) {
+Boolean Make_CRC_Send(unsigned char Plength,unsigned char B[8]) {
+  Boolean ok = true;
   unsigned char Error_Check = 0;
   for(int i=0;i<Plength-1;i++) {
-    SerialWrite(B[i]);
+    ok = SerialWrite(B[i]);
     Error_Check += B[i];
+    if (!ok) return ok;
   }
   Error_Check = Error_Check|0x80;
-  SerialWrite(Error_Check);
+  ok = SerialWrite(Error_Check);
+  return ok;
 }
 
 
@@ -482,7 +483,7 @@ int testMotor(void)
     }
     
     if (FatalError || result == LONG_MIN) {
-        return statusByte;
+    //    return statusByte;
         // STOP  MOTOR PISSED!
     }
 
@@ -495,16 +496,14 @@ int testMotor(void)
         configByte = (unsigned char)config;
     }
     
-    
-    
     // limited "Set" writes to firmware dont' use in loopDmmDriver_SerialPort_h
-    //SetMainGain(Axis_Num, 60); //[15]// [14~20~40(loud)]relative to load, increase as load increases
-    ReadParamer(Read_MainGain, Axis_Num);  ReadMainGain(Axis_Num); // Param is MotorID Main Gain stored in MainGain_Read variable
-    // SetSpeedGain(Axis_Num, 127); // [127] higher : less dynamic movements
+    SetMainGain(Axis_Num, 10); //[15]// [14~20~40(loud)]relative to load, increase as load increases
+    ReadParamer(Read_MainGain, Axis_Num);  // Param is MotorID Main Gain stored in MainGain_Read variable
+    SetSpeedGain(Axis_Num, 127n); // [127] higher : less dynamic movements
     ReadParamer(Read_SpeedGain, Axis_Num);
     ReadMotorPosition32(Axis_Num);
     
-   // SetIntGain(Axis_Num, 1); // higher for rigid system, lower for loose system (outside disturbance)
+    SetIntGain(Axis_Num, 1); //[1] higher for rigid system, lower for loose system (outside disturbance)
                              // lag in feedback from encoder
     
     ReadParamer(Read_IntGain, Axis_Num);
@@ -512,28 +511,32 @@ int testMotor(void)
     ReadParamer(Read_GearNumber, Axis_Num); // 500
     ReadParamer(Read_Drive_Config, Axis_Num);
     
-#if false
     
-    // reset Origin to Down/Reset Position
-    ResetOrgin(Axis_Num);
-    //return 0;
-    
-    // These are not remembered
     SetMaxSpeed(Axis_Num, 10); // 1
-    SetMaxAccel(Axis_Num, 16); // 4
-
-    
-    //MoveMotorToAbsolutePosition32(Axis_Num,0);
-    
-    
+    SetMaxAccel(Axis_Num, 4); // 6
+    ResetOrgin(Axis_Num);
+    MoveMotorToAbsolutePosition32(Axis_Num,0);
     printf("\n");
-    SetMaxSpeed(Axis_Num, 2); // 1
-    SetMaxAccel(Axis_Num, 6); // 6
     
-    MoveMotorConstantRotation(0,0);
-    delay(50);
-    return 0;
+//    MotorDisengage(Axis_Num,0);
+//    delay(10000);
+    
+    
+#if true // Constant Speed Test
     for(;;) {
+        MoveMotorConstantRotation(0,20);
+        delay(5000);
+        MoveMotorConstantRotation(0,-20);
+        delay(5000);
+    }
+    
+#endif
+    
+    
+#if false //increment pos test
+    for(;;) {
+
+        
         if ((center % 3000) == 0) {
             Send_Package(General_Read, 0 , Is_AbsPos32);
             delta = delta * -1;
@@ -548,7 +551,10 @@ int testMotor(void)
         center += delta;
         MoveMotorToAbsolutePosition32(Axis_Num, center);
     }
+#endif
     
+#if false // back and forth test
+    for(;;) {
     MoveMotorToAbsolutePosition32(Axis_Num, center + delta);
 //    ReadMotorTorqueCurrent(Axis_Num); //Motor torque current stored in MotorTorqueCurrent variable
     delay(delay_ms);
@@ -566,14 +572,10 @@ int testMotor(void)
     MoveMotorToAbsolutePosition32(Axis_Num, center);
         //   ReadMotorTorqueCurrent(Axis_Num); //Motor torque current stored in MotorTorqueCurrent variable
     delay(delay_ms);
-
-        
-    //}
-    
+    }
 #endif
-    
-    MotorDisengage(Axis_Num,configByte);
-    delay(50);
+   
+    delay(250);
     return 0;
 }
 
