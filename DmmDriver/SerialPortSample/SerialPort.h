@@ -13,7 +13,7 @@
 
 long SerialAvailable();
 int SerialRead();
-ssize_t SerialWrite(char b);
+Boolean SerialWrite(char b);
 
 int openSerial(char *);
 void closeSerial();

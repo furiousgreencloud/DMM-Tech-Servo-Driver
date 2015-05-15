@@ -352,14 +352,13 @@ int SerialRead() {
 }
 
 
-ssize_t SerialWrite(char b) {
+Boolean SerialWrite(char b) {
     assert(fileDescriptor != -1);
     ssize_t numBytes = write(fileDescriptor, &b, 1);
-    assert(numBytes == 1 || numBytes == -1);
-    if (numBytes == 0) {
-        printf("SerialWrite Failed");
+    if (numBytes < 0) {
+        printf("SerialWrite Failed\n");
     }
-    return numBytes;
+    return (numBytes > 0);
 }
 
 #if 0
