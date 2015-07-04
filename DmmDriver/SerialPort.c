@@ -475,6 +475,3 @@ void closeSerial()
 }
 
 
-void delay(int millis) {
-    usleep(millis * 1000);
-}

@@ -24,10 +24,14 @@ Communication Format
 #include <sysexits.h>
 #include <stdio.h>
 #include <limits.h>
+#include <math.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "SerialPort.h"
 
 #define SERIAL_PORT "/dev/cu.usbserial-FTXUEN03A"
+//#define SERIAL_PORT "/dev/cu.usbserial"
 
 #define Go_Absolute_Pos 0x01
 #define Turn_ConstSpeed 0x0a
@@ -76,6 +80,11 @@ Communication Format
     #define MAX(a,b) ((a>b) ? a : b)
 #endif
 
+double map(double x, double in_min, double in_max, double out_min, double out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 typedef enum {In_Progress = 0, Complete_Success,  CRC_Error, Timeout_Error } ProtocolError_t;
 
 static char InputBuffer[8]; //Input buffer from RS232,
@@ -115,11 +124,11 @@ const char * ParameterName(char isCode) {
 void ReadPackage() {
   unsigned char c,cif;
   if (SerialAvailable() == 0) { // No Data... wait
-      delay(20);
+      delay(1);
       //printf("Waiting for response ... ");
       if (SerialAvailable() == 0) {
           ProtocolError = Timeout_Error;
-          //printf("Timeout\n");
+          printf("TIMEOUT\n");
           return;
       } else {
           //printf("Phew OK\n");
@@ -202,7 +211,7 @@ ProtocolError_t Get_Function(void)
         default:
             Drive_Read_Value = Cal_SignValue(Read_Package_Buffer);
   }
-  //printf("%s: %ld\n",ParameterName(Drive_Read_Code), Drive_Read_Value);
+  printf("%s: %ld\n",ParameterName(Drive_Read_Code), Drive_Read_Value);
   return Complete_Success;
 }
 
@@ -460,7 +469,7 @@ long ReadParamer(char queryParam, char Axis_Num) {
     while(ProtocolError == In_Progress) {
         ReadPackage();
     }
-//    printf("%s: %ld\n",ParameterName(Drive_Read_Code), Drive_Read_Value);
+    printf("%s: %ld\n",ParameterName(Drive_Read_Code), Drive_Read_Value);
     if (ProtocolError == Complete_Success) {
         return Drive_Read_Value;
     } else {
@@ -489,12 +498,19 @@ long ReadMotorPosition32(char Axis_Num)
     // and the data is 28bits motor position32.
     while(ProtocolError == In_Progress) {
         ReadPackage();
-        
     }
     if (ProtocolError == Complete_Success && Drive_Read_Code == Is_AbsPos32) {
         return Drive_Read_Value;
     } else {
         return LONG_MIN;
+    }
+}
+
+
+void delay(int millis) {
+    for(int m = millis; m > 0; m -= 250) {
+        usleep(250 * 1000);
+        ReadMotorPosition32(0);
     }
 }
 
@@ -517,13 +533,63 @@ long ReadMotorPulsePosition(char Axis) {
     }
     if (ProtocolError == Complete_Success && Drive_Read_Code == Is_AbsPos32) {
         long pulsePos = Abs32ToPos( Drive_Read_Value, zeroPos);
-        printf("Pulse Position: %d\n", pulsePos);
+        printf("Pulse Position: %ld\n", pulsePos);
         return pulsePos;
     } else {
         return LONG_MIN;
     }
 }
 
+#define DEAD_ZONE 1500
+#define MAX_SPEED 1
+#define MAX_ACCEL 5
+
+
+void MoveToPostionRamped(char Axis, long destPos, int speed) {
+    speed = MIN(speed, 150);
+
+    SetMaxAccel(Axis,MAX_ACCEL);
+    SetMaxSpeed(Axis,MAX_SPEED);
+
+    
+    for(;;) {
+        long curPos = ReadMotorPosition32(Axis);
+        if (curPos == LONG_MIN) {
+            MoveMotorConstantRotation(Axis, 0); // stop
+            return;
+        }
+        long delta = destPos - curPos;
+        long lastSpeed = LONG_MIN;
+        double rotSpeed = 0;
+    
+        long slopeZone = DEAD_ZONE * pow(speed,1.15);
+        if (labs(delta) <= DEAD_ZONE) {
+            // we are there
+            MoveMotorConstantRotation(Axis, 0); // stop
+            return;
+        } else if (labs(delta) >  slopeZone) {
+            if (delta > 0) {
+                rotSpeed = speed;
+            } else {
+                rotSpeed = -speed;
+            }
+        } else {
+            if (delta > 0) {
+                rotSpeed = round(map(delta,slopeZone,DEAD_ZONE,speed,1));
+                rotSpeed = MAX(rotSpeed,1);
+            } else {
+                rotSpeed = round(map(delta,-1*slopeZone,-DEAD_ZONE,-1*speed,1));
+                rotSpeed = MIN(rotSpeed,-1);
+            }
+        }
+        long rotSpeed_long =(long)(MIN(speed, MAX(-speed,rotSpeed)));
+        if (lastSpeed != rotSpeed_long) {
+            MoveMotorConstantRotation(Axis, rotSpeed_long);
+            lastSpeed = rotSpeed_long;
+            printf("Speed: %ld\n", rotSpeed_long);
+        }
+    }
+}
 
 int testMotor(void)
 {
@@ -553,9 +619,9 @@ int testMotor(void)
     }
     
     // limited "Set" writes to firmware dont' use in loopDmmDriver_SerialPort_h
-    SetMainGain(Axis_Num, 1); //[15]// [14~20~40(loud)]relative to load, increase as load increases
+    SetMainGain(Axis_Num, 14); //[15]// [14~20~40(loud)]relative to load, increase as load increases
     ReadParamer(Read_MainGain, Axis_Num);  // Param is MotorID Main Gain stored in MainGain_Read variable
-    SetSpeedGain(Axis_Num, 127); // [127] higher : less dynamic movements, Torque application speed
+    SetSpeedGain(Axis_Num, 26); // [30] higher : less dynamic movements, Torque application speed
     ReadParamer(Read_SpeedGain, Axis_Num);
     
     SetIntGain(Axis_Num, 1); //[1] higher for rigid system, lower for loose system (outside disturbance)
@@ -569,29 +635,39 @@ int testMotor(void)
     ReadParamer(Read_Drive_Config, Axis_Num);
     ReadMotorPosition32(Axis_Num);
     
-#if false // Read Settings ONLY
+#if false // Read/Write Settings ONLY
     return 0;
 #endif
     
     
-#define MAX_SPEED 1
-#define MAX_ACCEL 1
-    SetMaxSpeed(Axis_Num, MAX_SPEED); // 1
-    SetMaxAccel(Axis_Num, MAX_ACCEL); // 6
+    // [3-5]
+    SetMaxSpeed(Axis_Num, MAX_SPEED);
+    SetMaxAccel(Axis_Num, MAX_ACCEL);
 #if false // Zero Motor Position
     zeroMotor(Axis_Num);
 #endif
     
-#if false // Constant Speed Test
+#if true // Constant Speed Test
     
     for(;;) {
-        MoveMotorConstantRotation(0,-10);
-        delay(2000);
-        MoveMotorConstantRotation(0,10);
-        delay(2000);
+        MoveMotorConstantRotation(0,-1); printf("-\n");
+        delay(4000);
+        MoveMotorConstantRotation(0,0); printf("0\n");
+        delay(4000);
+        MoveMotorConstantRotation(0,+1); printf("+\n");
+        delay(8000);
+        MoveMotorConstantRotation(0,0); printf("0\n");
+        delay(4000);
+        
     }
     
 #endif
+    for(;;) {
+        MoveToPostionRamped(0, 0, 1);
+        //delay(8000);
+        MoveToPostionRamped(0, DEAD_ZONE * 1000, 1);
+        //delay(8000);
+    }
     
     
 #if false // manual move + and -
@@ -612,20 +688,20 @@ int testMotor(void)
 #endif
     
     
-#if true // back and forth test
+#if false // back and forth test
     printf("\nBack and Forth Test\n");
     for(;;) {
-        long delta = 1000; //1000 : 1 Revolution;
+        long delta = 14000; //1000 : 1 Revolution @ 500 "Gear Ratio"
         long center = 0;
-        int delay_ms = 2000;
+        int delay_ms = 8000;
         
         MoveMotorToAbsolutePosition32(Axis_Num, center + delta);
         delay(delay_ms);
-        ReadMotorPulsePosition(Axis_Num);
+        //ReadMotorPulsePosition(Axis_Num);
 
         MoveMotorToAbsolutePosition32(Axis_Num, center);
         delay(delay_ms);
-        ReadMotorPulsePosition(Axis_Num);
+        /*ReadMotorPulsePosition(Axis_Num);
         
         MoveMotorToAbsolutePosition32(Axis_Num, center + -1 * delta);
         delay(delay_ms);
@@ -634,6 +710,7 @@ int testMotor(void)
         MoveMotorToAbsolutePosition32(Axis_Num, center);
         delay(delay_ms);
         ReadMotorPulsePosition(Axis_Num);
+         */
     }
 #endif
    
